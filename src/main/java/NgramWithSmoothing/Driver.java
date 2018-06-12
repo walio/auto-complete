@@ -1,70 +1,41 @@
 package NgramWithSmoothing;
 
-import NgramWithSmoothing.Continuation.ContinuationDriver;
-import NgramWithSmoothing.HighestOrderProb.HighestOrderProb;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import NgramWithSmoothing.Calculation.*;
+import NgramWithSmoothing.ExtractKgram.*;
 import org.apache.log4j.BasicConfigurator;
 
-public class Driver {
-    public static void main(String[] args) throws Exception {
 
+public class Driver {
+
+    public static void main(String[] args) throws Exception {
+        //args: input path,output path,ngram,d
+
+        //log4j configure
         BasicConfigurator.configure();
 
-        //NgramJob
-        Configuration conf1 = new Configuration();
-        conf1.set("textinputformat.record.delimiter", ".");
-
-        Job NgramJob = Job.getInstance(conf1);
-        NgramJob.setJarByClass(Driver.class);
-
-        NgramJob.setMapperClass(NgramBuilder.NgramMapper.class);
-        NgramJob.setReducerClass(NgramBuilder.NgramReducer.class);
-
-        NgramJob.setOutputKeyClass(Text.class);
-        NgramJob.setOutputValueClass(IntWritable.class);
-
-        NgramJob.setInputFormatClass(TextInputFormat.class);
-        NgramJob.setOutputFormatClass(TextOutputFormat.class);
-
-        TextInputFormat.setInputPaths(NgramJob, new Path(args[0]));
-        TextOutputFormat.setOutputPath(NgramJob, new Path("NgramLibrary"));
-
-        NgramJob.waitForCompletion(true);
-
-        //highest order term,(C{w(i−1)wi}−d)/C(wi−1)
-        Configuration NullConf = new Configuration();
-
-        Job HighestOrderJob = Job.getInstance(NullConf);
-        HighestOrderJob.setJarByClass(Driver.class);
-
-        HighestOrderJob.setMapperClass(HighestOrderProb.HighestOrderProbMapper.class);
-        HighestOrderJob.setReducerClass(HighestOrderProb.HighestOrderProbReducer.class);
-
-        HighestOrderJob.setOutputKeyClass(Text.class);
-        HighestOrderJob.setOutputValueClass(DoubleWritable.class);
-
-        HighestOrderJob.setMapOutputValueClass(Text.class);
-
-        HighestOrderJob.setInputFormatClass(TextInputFormat.class);
-        HighestOrderJob.setOutputFormatClass(TextOutputFormat.class);
-
-        TextInputFormat.setInputPaths(HighestOrderJob, new Path("NgramLibrary"));
-        TextOutputFormat.setOutputPath(HighestOrderJob, new Path("HighestOrderProb"));
-
-        HighestOrderJob.waitForCompletion(true);
-
-        //continuation
-        for(int i = 3;i<4;++i){
-            ContinuationDriver.main(new String[]{String.valueOf(i),"0.75"});
+        //trim "\"
+        String output = args[1];
+        if(output.charAt(output.length()-1)=='/' || output.charAt(output.length()-1)=='\\'){
+            output = output.substring(0,output.length()-1);
         }
+        //parse other args
+        int noGram = Integer.parseInt(args[2]);
+        double discount = Double.parseDouble(args[3]);
 
+        //build ngram library
+        NgramBuilder.buildNgram(args[0],"NgramLibrary");
 
+        //build unigram
+        ExtractCKN.extract("NgramLibrary","1gramWords",1);
+        Probability.calcProb("1gramWords","1gramProbs",discount);
+
+        //iteration,low order
+        for(int i=2;i<noGram;++i){
+            ExtractCKN.extract("NgramLibrary",i+"gramWords",i);
+            Summation.calculate(i+"gramWords",i+"gramProbs",i-1+"gramProbs",discount);
+        }
+        //highest order
+        ExtractCount.extract("NgramLibrary",noGram+"gramWords",noGram);
+        Summation.calculate(noGram+"gramWords",output,noGram-1+"gramProbs",discount);
     }
 }

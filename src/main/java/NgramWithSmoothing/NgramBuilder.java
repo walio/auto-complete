@@ -1,10 +1,15 @@
 package NgramWithSmoothing;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
 
@@ -63,5 +68,26 @@ public class NgramBuilder {
         }
     }
 
+    public static void buildNgram(String inputPath,String outputPath) throws Exception{
+        Configuration conf1 = new Configuration();
+        conf1.set("textinputformat.record.delimiter", ".");
+
+        Job NgramJob = Job.getInstance(conf1);
+        NgramJob.setJarByClass(Driver.class);
+
+        NgramJob.setMapperClass(NgramBuilder.NgramMapper.class);
+        NgramJob.setReducerClass(NgramBuilder.NgramReducer.class);
+
+        NgramJob.setOutputKeyClass(Text.class);
+        NgramJob.setOutputValueClass(IntWritable.class);
+
+        NgramJob.setInputFormatClass(TextInputFormat.class);
+        NgramJob.setOutputFormatClass(TextOutputFormat.class);
+
+        TextInputFormat.setInputPaths(NgramJob, new Path(inputPath));
+        TextOutputFormat.setOutputPath(NgramJob, new Path("NgramLibrary"));
+
+        NgramJob.waitForCompletion(true);
+    }
 
 }
