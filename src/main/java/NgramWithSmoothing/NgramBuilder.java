@@ -85,7 +85,7 @@ public class NgramBuilder {
         NgramJob.setOutputFormatClass(TextOutputFormat.class);
 
         TextInputFormat.setInputPaths(NgramJob, new Path(inputPath));
-        TextOutputFormat.setOutputPath(NgramJob, new Path("NgramLibrary"));
+        TextOutputFormat.setOutputPath(NgramJob, new Path(outputPath));
 
         NgramJob.waitForCompletion(true);
     }

@@ -23,19 +23,20 @@ public class Driver {
         double discount = Double.parseDouble(args[3]);
 
         //build ngram library
-        NgramBuilder.buildNgram(args[0],"NgramLibrary");
+        NgramBuilder.buildNgram(args[0],"output\\NgramLibrary");
 
         //build unigram
-        ExtractCKN.extract("NgramLibrary","1gramWords",1);
-        Probability.calcProb("1gramWords","1gramProbs",discount);
+        ExtractCKN.extract("output\\NgramLibrary","output\\1gramWords",1);
+        Probability.calcProb("output\\1gramWords","output\\1gramProbs",0);
 
         //iteration,low order
         for(int i=2;i<noGram;++i){
-            ExtractCKN.extract("NgramLibrary",i+"gramWords",i);
-            Summation.calculate(i+"gramWords",i+"gramProbs",i-1+"gramProbs",discount);
+            ExtractCKN.extract("output\\NgramLibrary","output\\"+i+"gramWords",i);
+            CalculateDriver.calculateProb("output\\"+i+"gramWords","output\\"+i+"gramProbs","output\\"+(i-1)+"gramProbs",discount);
         }
         //highest order
-        ExtractCount.extract("NgramLibrary",noGram+"gramWords",noGram);
-        Summation.calculate(noGram+"gramWords",output,noGram-1+"gramProbs",discount);
+        ExtractCount.extract("output\\NgramLibrary","output\\"+noGram+"gramWords",noGram);
+        CalculateDriver.calculateProb("output\\"+noGram+"gramWords","output\\"+output,"output\\"+(noGram-1)+"gramProbs",discount);
+
     }
 }

@@ -64,7 +64,7 @@ public class Probability {
             }
             for(int i=0;i<grams.size();++i){
                 KeyOut.set(grams.get(i));
-                ValueOut.set(String.valueOf((double)discount* Math.max(counts.get(i)-discount,0)/sum));
+                ValueOut.set(String.valueOf((counts.get(i)-discount)/sum));
                 context.write(KeyOut,ValueOut);
             }
         }
