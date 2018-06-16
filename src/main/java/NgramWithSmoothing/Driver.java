@@ -37,6 +37,6 @@ public class Driver {
         //highest order
         ExtractCount.extract("output\\NgramLibrary","output\\"+noGram+"gramWords",noGram);
         CalculateDriver.calculateProb("output\\"+noGram+"gramWords","output\\"+output,"output\\"+(noGram-1)+"gramProbs",discount);
-
+//        DBWritor.writeDB("output\\output");
     }
 }
