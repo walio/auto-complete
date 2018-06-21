@@ -1,5 +1,6 @@
-package NgramWithSmoothing;
+package NgramWithSmoothing.KgramExtractor;
 
+import NgramWithSmoothing.Driver;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -10,6 +11,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.log4j.BasicConfigurator;
 
 import java.io.IOException;
 
@@ -40,6 +42,7 @@ public class NgramBuilder {
                     sb.append(words[corlen+i]);
                     word.set(sb.toString().trim());
                     context.write(word,one);
+                    context.progress();
                 }
             }
         }
@@ -50,7 +53,7 @@ public class NgramBuilder {
         private int threshold;
         @Override
         public void setup(Context context){
-            threshold=context.getConfiguration().getInt("threshold",10);
+            threshold=context.getConfiguration().getInt("threshold",5);
         }
 
         private IntWritable count = new IntWritable();
@@ -59,6 +62,7 @@ public class NgramBuilder {
             int sum = 0;
             for (IntWritable val : values) {
                 sum += val.get();
+                context.progress();
             }
             if(sum<threshold){
                 return;
@@ -68,26 +72,32 @@ public class NgramBuilder {
         }
     }
 
-    public static void buildNgram(String inputPath,String outputPath) throws Exception{
-        Configuration conf1 = new Configuration();
-        conf1.set("textinputformat.record.delimiter", ".");
+    public static void buildNgram(String inputPath,String outputPath,int Ng,int threshold) throws ClassNotFoundException, IOException, InterruptedException {
+        Configuration conf = new Configuration();
+        conf.set("textinputformat.record.delimiter", ".");
+        conf.setInt("Ng",Ng);
+        conf.setInt("threshold",threshold);
 
-        Job NgramJob = Job.getInstance(conf1);
-        NgramJob.setJarByClass(Driver.class);
+        Job job = Job.getInstance(conf);
+        job.setJarByClass(Driver.class);
 
-        NgramJob.setMapperClass(NgramBuilder.NgramMapper.class);
-        NgramJob.setReducerClass(NgramBuilder.NgramReducer.class);
+        job.setMapperClass(NgramMapper.class);
+        job.setReducerClass(NgramReducer.class);
 
-        NgramJob.setOutputKeyClass(Text.class);
-        NgramJob.setOutputValueClass(IntWritable.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
 
-        NgramJob.setInputFormatClass(TextInputFormat.class);
-        NgramJob.setOutputFormatClass(TextOutputFormat.class);
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
 
-        TextInputFormat.setInputPaths(NgramJob, new Path(inputPath));
-        TextOutputFormat.setOutputPath(NgramJob, new Path(outputPath));
+        TextInputFormat.setInputPaths(job, new Path(inputPath));
+        TextOutputFormat.setOutputPath(job, new Path(outputPath));
 
-        NgramJob.waitForCompletion(true);
+        job.waitForCompletion(true);
+    }
+
+    public static void main(String[] args) throws Exception{
+        buildNgram(args[0],args[1],Integer.parseInt(args[2]),Integer.parseInt(args[3]));
     }
 
 }

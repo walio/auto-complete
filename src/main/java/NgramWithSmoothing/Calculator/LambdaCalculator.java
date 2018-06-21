@@ -1,16 +1,20 @@
-package NgramWithSmoothing.Calculation;
+package NgramWithSmoothing.Calculator;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-public class Lambda {
+public class LambdaCalculator {
     public static class LambdaMapper extends Mapper<LongWritable, Text, Text, DoubleWritable> {
 
         private Text predecessor = new Text();
@@ -53,5 +57,39 @@ public class Lambda {
             ValueOut.set(discount*count/sum);
             context.write(key,ValueOut);
         }
+    }
+
+    public static class LambdaPartitioner extends Partitioner<Text,Text> {
+
+        @Override
+        public int getPartition(Text key, Text value,int numPartitions){
+            return (int)key.toString().charAt(0);
+        }
+    }
+
+    public static void calcLambda(String inputPath,String outputPath,double discount) throws ClassNotFoundException, IOException, InterruptedException {
+        Configuration conf = new Configuration();
+        conf.setDouble("discount",discount);
+
+        Job job = Job.getInstance(conf);
+        job.setJarByClass(LambdaCalculator.class);
+
+        job.setMapperClass(LambdaMapper.class);
+        job.setPartitionerClass(LambdaPartitioner.class);
+        job.setReducerClass(LambdaReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(DoubleWritable.class);
+
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
+
+        TextInputFormat.setInputPaths(job, new Path(inputPath));
+        TextOutputFormat.setOutputPath(job, new Path(outputPath));
+
+        job.waitForCompletion(true);
+    }
+    public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
+        calcLambda(args[0],args[1],Double.parseDouble(args[2]));
     }
 }

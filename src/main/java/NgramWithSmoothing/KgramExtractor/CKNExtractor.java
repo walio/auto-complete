@@ -1,4 +1,4 @@
-package NgramWithSmoothing.ExtractKgram;
+package NgramWithSmoothing.KgramExtractor;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -11,7 +11,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
 
-public class ExtractCKN {
+public class CKNExtractor {
     public static class ExtractMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
 
         int Gramlength;
@@ -58,16 +58,16 @@ public class ExtractCKN {
         }
     }
 
-    public static void extract(String inputPath,String outputPath,int order) throws Exception{
+    public static void extract(String inputPath,String outputPath,int order) throws ClassNotFoundException, IOException, InterruptedException {
         //extract cardinality of k gram
         Configuration conf = new Configuration();
         conf.setInt("GramLength",order);
 
         Job job = Job.getInstance(conf);
-        job.setJarByClass(ExtractCKN.class);
+        job.setJarByClass(CKNExtractor.class);
 
-        job.setMapperClass(ExtractCKN.ExtractMapper.class);
-        job.setReducerClass(ExtractCKN.ExtractReducer.class);
+        job.setMapperClass(ExtractMapper.class);
+        job.setReducerClass(ExtractReducer.class);
 
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(IntWritable.class);
@@ -80,5 +80,8 @@ public class ExtractCKN {
 
         job.waitForCompletion(true);
 
+    }
+    public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
+        extract(args[0],args[1],Integer.parseInt(args[2]));
     }
 }

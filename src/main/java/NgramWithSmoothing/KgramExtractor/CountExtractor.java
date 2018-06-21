@@ -1,20 +1,18 @@
-package NgramWithSmoothing.ExtractKgram;
+package NgramWithSmoothing.KgramExtractor;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.IOException;
 
-public class ExtractCount {
+public class CountExtractor {
     public static class ExtractMapper extends Mapper<LongWritable, Text, Text, NullWritable> {
 
         int Gramlength;
@@ -38,14 +36,14 @@ public class ExtractCount {
         }
     }
 
-    public static void extract(String inputPath,String outputPath,int order) throws Exception{
+    public static void extract(String inputPath,String outputPath,int order) throws ClassNotFoundException, IOException, InterruptedException {
         Configuration conf = new Configuration();
         conf.setInt("GramLength",order);
 
         Job job = Job.getInstance(conf);
-        job.setJarByClass(ExtractCount.class);
+        job.setJarByClass(CountExtractor.class);
 
-        job.setMapperClass(ExtractCount.ExtractMapper.class);
+        job.setMapperClass(CountExtractor.ExtractMapper.class);
         job.setNumReduceTasks(0);
 
         job.setMapOutputKeyClass(Text.class);
@@ -58,5 +56,8 @@ public class ExtractCount {
         TextOutputFormat.setOutputPath(job, new Path(outputPath));
 
         job.waitForCompletion(true);
+    }
+    public static void main(String[] args) throws ClassNotFoundException, IOException, InterruptedException {
+        extract(args[0],args[1],Integer.parseInt(args[2]));
     }
 }
