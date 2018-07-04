@@ -33,38 +33,38 @@ public class Driver extends Configured implements Tool{
         //parse other args
         int noGram = Integer.parseInt(args[2]);
         double discount = Double.parseDouble(args[4]);
-
-        //build ngram library
-        System.out.println("starting building library");
-        NgramBuilder.buildNgram(args[0],grams+"library",noGram,Integer.parseInt(args[3]));
-        //build unigram
-        System.out.println("starting calculate unigram");
-        CKNExtractor.extract(grams+"library",grams+"1",1);
-        ProbabilityCalculator.calcProb(grams+"1",model+"prob1",0);
-        //iteration,low order
-        for(int i=2;i<noGram;++i){
-            System.out.println("starting calculate "+i+" gram");
-            CKNExtractor.extract(grams+"library",grams+i,i);
-            ProbabilityCalculator.calcProb(grams+i,pivot+"prob"+i,discount);
-            LambdaCalculator.calcLambda(grams+i,model+"lambda"+i,discount);
-        }
-        //highest order
-        System.out.println("starting calculate highest gram");
-        CountExtractor.extract(grams+"library",grams+noGram,noGram);
-        ProbabilityCalculator.calcProb(grams+noGram,pivot+"prob"+noGram,discount);
-        LambdaCalculator.calcLambda(grams+noGram,model+"lambda"+noGram,discount);
-        //Interpolate
-        for (int i=2;i<noGram+1;++i){
-            System.out.println("interpolating "+i);
-            Interpolator.interpolate(
-                    model+"prob"+(i-1),
-                    pivot+"prob"+i,
-                    model+"lambda"+i,
-                    model+"prob"+i,
-                    i,
-                    i-1
-            );
-        }
+//
+//        //build ngram library
+//        System.out.println("starting building library");
+//        NgramBuilder.buildNgram(args[0],grams+"library",noGram,Integer.parseInt(args[3]));
+//        //build unigram
+//        System.out.println("starting calculate unigram");
+//        CKNExtractor.extract(grams+"library",grams+"1",1);
+//        ProbabilityCalculator.calcProb(grams+"1",model+"prob1",0);
+//        //iteration,low order
+//        for(int i=2;i<noGram;++i){
+//            System.out.println("starting calculate "+i+" gram");
+//            CKNExtractor.extract(grams+"library",grams+i,i);
+//            ProbabilityCalculator.calcProb(grams+i,pivot+"prob"+i,discount);
+//            LambdaCalculator.calcLambda(grams+i,model+"lambda"+i,discount);
+//        }
+//        //highest order
+//        System.out.println("starting calculate highest gram");
+//        CountExtractor.extract(grams+"library",grams+noGram,noGram);
+//        ProbabilityCalculator.calcProb(grams+noGram,pivot+"prob"+noGram,discount);
+//        LambdaCalculator.calcLambda(grams+noGram,model+"lambda"+noGram,discount);
+//        //Interpolate
+//        for (int i=2;i<noGram+1;++i){
+//            System.out.println("interpolating "+i);
+//            Interpolator.interpolate(
+//                    model+"prob"+(i-1),
+//                    pivot+"prob"+i,
+//                    model+"lambda"+i,
+//                    model+"prob"+i,
+//                    i,
+//                    i-1
+//            );
+//        }
         //write to hbase
         System.out.println("write to db"+1);
         ProbWriter.write(model+"prob"+1,"order1");
