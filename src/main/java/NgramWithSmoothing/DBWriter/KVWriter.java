@@ -28,7 +28,7 @@ public class KVWriter {
                 sb.append(words[i]);
             }
 
-            Put put = new Put(sb.toString().getBytes());
+            Put put = new Put(sb.toString().trim().getBytes());
             put.addColumn("lambda".getBytes(),"lambda".getBytes(),words[words.length-1].getBytes());
 
             context.write(null,put);

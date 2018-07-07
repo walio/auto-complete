@@ -13,7 +13,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.PriorityQueue;
 
 public class ProbWriter {
@@ -50,16 +49,13 @@ public class ProbWriter {
 
         @Override
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            PriorityQueue<Pair> pq = new PriorityQueue<>(10, new Comparator<Pair>() {
-                @Override
-                public int compare(Pair o1, Pair o2) {
-                    if (o1.value==o2.value){
-                        return 0;
-                    }else if (o1.value>o2.value){
-                        return -1;
-                    }else{
-                        return 1;
-                    }
+            PriorityQueue<Pair> pq = new PriorityQueue<Pair>(10, (pair1, pair2) ->{
+                if (pair1.value==pair2.value){
+                    return 0;
+                }else if (pair1.value>pair2.value){
+                    return -1;
+                }else{
+                    return 1;
                 }
             });
             Put put;
@@ -76,7 +72,7 @@ public class ProbWriter {
             int i=0;
             for(Pair pair:pq){
                 ++i;
-                put.addColumn("predict".getBytes(),String.valueOf(i).getBytes(),(pair.key+"="+pair.value).getBytes());
+                put.addColumn("predict".getBytes(),String.format("%010d",i).getBytes(),(pair.key+"="+pair.value).getBytes());
             }
             context.write(null,put);
         }
